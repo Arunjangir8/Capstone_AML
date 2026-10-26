@@ -7,8 +7,8 @@
 * **Sarvesh Choudhary** (`sarveshDhayal`)
 * **Arun Jangir** (`Arunjangir8`)
 * **Keshav Chhabra** (`keshavvchhabra`)
-* **Mayank Yadav** (`mayankgamerz25`)
-* **Rohit Godara** (`rohit-godara`)
+* **Mayank Yadav** (`mayankthukran`)
+* **Rohit Kumar** (`rohit-godara`)
 
 
 ## 📌 What is this project?
