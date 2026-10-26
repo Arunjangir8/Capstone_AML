@@ -1,11 +1,21 @@
-ipykernel==7.4.0
-joblib==1.6.0
-jupyter==1.1.1
-matplotlib==3.11.2
-nbconvert==7.17.2
-nbformat==5.11.1
+# Core Scientific Computing & Data Processing
 numpy==2.5.4
 pandas==3.1.0
+
+# Machine Learning & Model Persistence
 scikit-learn==1.9.1
+joblib==1.6.0
+
+# Data Visualization
+matplotlib==3.11.2
 seaborn==0.13.2
+
+# Interactive Notebooks & Execution
+jupyter==1.1.1
+ipykernel==7.4.0
+nbconvert==7.17.2
+nbformat==5.11.1
+
+# Web Application & Dashboard
 streamlit==1.66.1
+
