@@ -36,14 +36,6 @@ def load_raw(name):
     return pd.read_csv(RAW_DATA / name, sep=r"\s+", header=None, names=COLUMNS)
 
 
-def load_features():
-    """Load the feature tables made in notebook 02."""
-    train = pd.read_csv(PROCESSED_DATA / "train_features.csv")
-    test = pd.read_csv(PROCESSED_DATA / "test_features.csv")
-    features = (PROCESSED_DATA / "feature_list.txt").read_text().split()
-    return train, test, features
-
-
 def evaluate(y_true, y_pred):
     """RMSE, MAE and R² rounded for display."""
     return {"RMSE": round(float(np.sqrt(mean_squared_error(y_true, y_pred))), 2),
@@ -94,15 +86,3 @@ def stage_table(rul_raw, y_true, y_pred):
         rows.append({"Stage": st, "Rows": int(mask.sum()),
                      **evaluate(np.asarray(y_true)[mask], np.asarray(y_pred)[mask])})
     return pd.DataFrame(rows).set_index("Stage").drop(columns="R2")
-
-
-def save_results(name, val, val_pred, test, test_pred, raw_only_rmse):
-    """Save predictions + metrics so notebook 06 can compare all models without retraining."""
-    slug = name.lower().replace(" ", "_")
-    val[["unit", "cycle", "RUL_raw", "RUL"]].assign(predicted=val_pred).to_csv(
-        RESULTS / f"{slug}_val_predictions.csv", index=False)
-    test[["unit", "RUL_raw", "RUL"]].assign(predicted=test_pred).to_csv(
-        RESULTS / f"{slug}_test_predictions.csv", index=False)
-    pd.DataFrame([{"Model": name, "raw_sensors_only_val_RMSE": round(float(raw_only_rmse), 2)}]).to_csv(
-        RESULTS / f"{slug}_raw_vs_engineered.csv", index=False)
-    print(f"Saved predictions for {name} in outputs/results/")

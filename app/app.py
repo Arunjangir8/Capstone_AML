@@ -13,7 +13,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "notebooks"))
 from utils import load_raw, MODELS, RESULTS, FIGURES, PROCESSED_DATA, RUL_CAP  # noqa: E402
 
-st.set_page_config(page_title="Engine RUL Predictor", page_icon="✈️", layout="wide")
+st.set_page_config(page_title="Engine RUL Predictor", layout="wide")
 
 
 @st.cache_resource
@@ -30,9 +30,9 @@ def load_everything():
     sensors = [f for f in features if "_" not in f and f != "cycle"]
     healthy_start = train[train["cycle"] <= 10][sensors].mean()   # typical healthy value of each sensor
     presets = {}
-    for name, rows in [("🟢 Healthy engine", train[train["RUL"] > 150]),
-                       ("🟠 Mid-life engine", train[train["RUL"].between(50, 70)]),
-                       ("🔴 Engine near failure", train[train["RUL"] <= 10])]:
+    for name, rows in [("Healthy engine", train[train["RUL"] > 150]),
+                       ("Mid-life engine", train[train["RUL"].between(50, 70)]),
+                       ("Engine near failure", train[train["RUL"] <= 10])]:
         presets[name] = {"cycle": int(rows["cycle"].median()), **rows[sensors].mean().to_dict()}
     return features, test, best, val_table.loc[best, "RMSE"], model, sensors, healthy_start, presets, load_raw("test_FD001.txt")
 
@@ -46,18 +46,18 @@ def predict(X):
 
 def show_result(predicted):
     if predicted < 30:
-        st.error(f"### Predicted RUL: {predicted:.0f} cycles\n🔴 Critical — schedule maintenance now")
+        st.error(f"### Predicted RUL: {predicted:.0f} cycles\nCritical — schedule maintenance now")
     elif predicted < 80:
-        st.warning(f"### Predicted RUL: {predicted:.0f} cycles\n🟠 Wearing out — plan maintenance")
+        st.warning(f"### Predicted RUL: {predicted:.0f} cycles\nWearing out — plan maintenance")
     else:
-        st.success(f"### Predicted RUL: {predicted:.0f} cycles\n🟢 Healthy")
+        st.success(f"### Predicted RUL: {predicted:.0f} cycles\nHealthy")
 
 
-st.title("✈️ Turbofan Engine — Remaining Useful Life Predictor")
+st.title("Turbofan Engine — Remaining Useful Life Predictor")
 st.caption(f"NASA C-MAPSS FD001 · model used: **{BEST}** (best model, validation RMSE {BEST_RMSE:.2f} cycles) · "
            f"RUL is capped at {RUL_CAP} cycles (= healthy)")
 
-tab_input, tab_engine, tab_compare = st.tabs(["🧮 Enter sensor values", "🔧 NASA test engine", "📊 Compare models"])
+tab_input, tab_engine, tab_compare = st.tabs(["Enter sensor values", "NASA test engine", "Compare models"])
 
 # ---------------------------------------------------------------- 1. manual input
 with tab_input:
@@ -104,6 +104,20 @@ with tab_engine:
 
 # ---------------------------------------------------------------- 3. comparison
 with tab_compare:
+    st.markdown("""
+#### Why these three models?
+RUL is a number, so this is a **regression** problem. All three models are regression models:
+
+* **Linear Regression** - simplest model: RUL = weighted sum of the features. Easy to explain, but it can only
+  draw a straight line, while real wear is "flat for a long time, then a fast drop".
+* **Decision Tree** - asks yes/no questions about the sensors, so it can learn this non-linear pattern.
+  Needs no scaling, but one tree overfits easily (high variance).
+* **Random Forest** - averages 150 different trees (bagging). Keeps the non-linear power of a tree
+  but is much more stable.
+
+**Best model: Random Forest** - lowest error on validation and on the 100 test engines
+(test RMSE 11.44, MAE 8.27, R2 0.92).
+""")
     st.markdown("#### Official test set results (100 engines)")
     table = pd.read_csv(RESULTS / "final_test_results.csv", index_col=0)
     st.dataframe(table, width="stretch")
