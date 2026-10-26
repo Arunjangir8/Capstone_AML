@@ -1,94 +1,72 @@
 # Project 7: Remaining Useful Life Prediction for Industrial Engines
 
-**Predictive Maintenance via Sensor Features and Machine Learning**  
-*Course: Advanced Machine Learning (AML)*  
-*Dataset: NASA C-MAPSS Turbofan Engine Degradation Simulation (Subset FD001)*  
+**Predictive Maintenance via Sensor Features and Machine Learning**
+*Course: Advanced Machine Learning (AML) · Dataset: NASA C-MAPSS Turbofan Engine Degradation (subset FD001)*
 
----
-
-## 👥 Team Contributors (Group of 5)
+## 👥 Team
 * **Sarvesh Choudhary** (`sarveshDhayal`)
 * **Arun Jangir** (`Arunjangir8`)
 * **Keshav Chhabra** (`keshavvchhabra`)
 * **Group Member 4**
 * **Group Member 5**
 
----
+## 📌 What is this project?
+Every engine starts healthy, slowly wears out and finally fails. From its **21 sensor readings** we predict the
+**Remaining Useful Life (RUL)** — how many more cycles (flights) it can run before failure.
 
-## 📌 Project Overview
-The objective of this project is to estimate the **Remaining Useful Life (RUL)** — the remaining operating cycles before failure — of aircraft gas turbine engines using multivariate time-series sensor data from NASA's C-MAPSS simulation benchmark.
+**Phase 1 (done):** build engineered degradation features (rolling mean, std, slope, drift from healthy start) and
+train classical ML models (Elastic Net, Random Forest, XGBoost) with a fair **engine-level** split.
 
-In **Phase 1 (Classical Machine Learning)**, we explore the *'Hybrid' Logic*: transforming raw sensor degradation trajectories into informative temporal features (rolling statistics and healthy baseline drifts) and training regression algorithms (Random Forest, XGBoost, and Elastic Net) with strict engine-level validation to prevent data leakage.
-
----
-
-## 📊 Key Results (Official NASA Test Set)
-
-Models evaluated on the 100 official test engines at their final observed cycles against true RUL ground truth:
-
-| Model | Test RMSE (cycles) | Test MAE (cycles) | Test $R^2$ | Status |
-|:---|:---:|:---:|:---:|:---|
-| **Baseline (Mean Predictor)** | 41.94 | 34.83 | -0.10 | Reference Benchmark |
-| **Elastic Net** | 16.13 | 13.14 | 0.84 | Linear Baseline with Regularization |
-| **Random Forest** | 11.44 | 8.27 | 0.92 | Non-linear Tree Ensemble |
-| **XGBoost (Best Model)** | **10.14** | **7.40** | **0.94** | **Selected Final Model** |
-
-### 🔍 Key Findings:
-- **Feature Engineering Impact:** Engineered degradation features reduced prediction error by **~38%** compared to training on raw sensor readings alone (RMSE dropped from 15.53 to 9.60 on validation).
-- **Dominant Features:** The drift/deviation from an engine's own initial healthy baseline (`_dev`) accounted for over 80% of tree model feature importance.
-- **Top Informative Sensors:** High-pressure compressor static pressure (`s11`), bypass ratio (`s15`), coolant bleeds (`s20`, `s21`), and LPT temperature (`s4`).
-
----
-
-## 📁 Repository Structure
+## 📁 Folder structure
 ```
 Capstone_AML/
-├── predictive_maintenance_aml_phase1.ipynb   # Executed master notebook with outputs & plots
-├── ACADEMIC_REPORT.md                        # Formal academic report, methodology & viva Q&A
-├── README.md                                 # Project overview & documentation
-├── build_notebook.py                         # Automated script to regenerate clean notebook
-├── requirements.txt                          # Python dependencies
-├── results/                                  # Saved models, evaluation tables & visual charts
-│   ├── final_model_xgboost.joblib            # Trained XGBoost model artifact
-│   ├── random_forest.joblib                  # Trained Random Forest model
-│   ├── elastic_net.joblib                    # Trained Elastic Net pipeline
-│   ├── test_predictions.csv                  # Per-engine test predictions (100 engines)
-│   ├── validation_results.csv                # Validation metrics comparison
-│   ├── early_vs_late.csv                     # Degradation stage performance breakdown
-│   ├── raw_vs_engineered.csv                 # Feature ablation study
-│   └── *.png                                 # EDA, feature importance, and test result plots
-└── detailed_version/                         # Extended builder with additional analyses
+├── notebooks/                       ← open these in order
+│   ├── 01_EDA_Data_Exploration.ipynb                     look at the data, charts
+│   ├── 02_Data_Preparation_and_Feature_Engineering.ipynb  RUL target, split, 71 features
+│   ├── 03_Model_Elastic_Net.ipynb                        model 1 (linear)
+│   ├── 04_Model_Random_Forest.ipynb                      model 2 (bagging trees)
+│   ├── 05_Model_XGBoost.ipynb                            model 3 (boosting trees) — best
+│   ├── 06_Final_Comparison_and_Test_Results.ipynb        all models side by side
+│   └── utils.py                                          small shared helpers (paths, metrics, plots)
+├── app/app.py                       ← Streamlit web app (predict any test engine)
+├── data/
+│   ├── raw/                         NASA C-MAPSS text files (train / test / RUL)
+│   └── processed/                   feature tables made by notebook 02 (not in git)
+├── outputs/
+│   ├── figures/                     every chart, named by notebook number (01_..., 05_...)
+│   ├── models/                      trained models (.joblib)
+│   └── results/                     predictions and result tables (.csv)
+├── docs/                            academic report + viva Q&A, project brief, NASA papers
+└── requirements.txt
 ```
+Hidden cells (**⋯**) in the notebooks contain only plotting or long helper code — click to expand.
 
----
+## 📊 Results (official NASA test set, 100 engines)
 
-## 🚀 How to Run & Reproduce
+| Model | Test RMSE | Test MAE | Test R² |
+|:---|:---:|:---:|:---:|
+| Baseline (always predict the average) | 41.94 | 34.83 | −0.10 |
+| Elastic Net | 16.13 | 13.14 | 0.84 |
+| Random Forest | 11.44 | 8.27 | 0.92 |
+| **XGBoost (best)** | **10.14** | **7.40** | **0.94** |
 
-### 1. Environment Setup
+* Engineered features reduced the error by **~38 %** vs raw sensors (XGBoost validation RMSE 15.53 → 9.60).
+* The drift from each engine's own healthy start (`_dev` features) gives ~80 % of the tree models' importance.
+
+## 🚀 How to run
 ```bash
-# Clone the repository
-git clone https://github.com/Arunjangir8/Capstone_AML.git
-cd Capstone_AML
-
-# Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+brew install libomp            # macOS only, needed by XGBoost
 
-# macOS only (required for XGBoost OpenMP runtime)
-brew install libomp
-```
+# 1. run the notebooks in order (02 creates the features, 03-05 save the models)
+cd notebooks && jupyter notebook
 
-### 2. Dataset Setup
-Download the NASA C-MAPSS dataset from [NASA Data Portal](https://data.nasa.gov/dataset/cmapss-jet-engine-simulated-data) and set the path:
-```bash
-export CMAPSS_DATA_DIR="/path/to/CMAPSSData"
+# 2. start the web app (from the project folder)
+streamlit run app/app.py
 ```
+Or run all notebooks at once: `cd notebooks && for f in 0*.ipynb; do jupyter nbconvert --to notebook --execute --inplace $f; done`
 
-### 3. Launch Notebook
-```bash
-jupyter notebook predictive_maintenance_aml_phase1.ipynb
-```
-The notebook executes end-to-end in approximately 2 minutes on standard hardware.
+## 🔜 Next: Phase 2
+The project brief also asks for a **sequence model (LSTM / 1D-CNN)** trained on raw sensor windows, compared with
+XGBoost using the same split and target → planned as `07_Model_LSTM.ipynb`.
