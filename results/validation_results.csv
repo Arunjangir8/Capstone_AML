@@ -1,0 +1,5 @@
+Model,RMSE,MAE,R2
+Baseline,41.72,36.93,-0.0
+Random Forest,10.34,6.77,0.94
+XGBoost,9.6,6.05,0.95
+Elastic Net,15.04,12.01,0.87

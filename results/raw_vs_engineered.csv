@@ -1,0 +1,4 @@
+Model,RMSE raw sensors only,RMSE with engineered features
+Random Forest,15.98,10.34
+XGBoost,15.53,9.6
+Elastic Net,17.96,15.04
