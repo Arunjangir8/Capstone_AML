@@ -24,7 +24,7 @@ RUL_CAP = 125   # maximum RUL used as target
 WINDOW = 10     # rolling window size (cycles)
 SEED = 42
 
-COLORS = {"Baseline": "#8a8984", "Elastic Net": "#1baf7a", "Random Forest": "#2a78d6", "XGBoost": "#eb6834"}
+COLORS = {"Baseline": "#8a8984", "Linear Regression": "#1baf7a", "Decision Tree": "#eb6834", "Random Forest": "#2a78d6"}
 plt.rcParams.update({"figure.dpi": 100, "axes.grid": True, "grid.alpha": 0.3})
 
 

@@ -1,305 +1,264 @@
-# Academic Documentation & Technical Report
+# Project Report — Remaining Useful Life Prediction for Industrial Engines
 
-## Project 7: Remaining Useful Life Prediction for Industrial Engines
-### Predictive Maintenance via Sensor Features and Machine Learning (Phase 1)
+### Predictive Maintenance with Sensor Features and Classical Machine Learning (Phase 1)
 
 - **Course:** Advanced Machine Learning (AML)
-- **Dataset:** NASA C-MAPSS Turbofan Engine Degradation Simulation (Subset FD001)
-- **Evaluation Benchmark:** Official NASA Test Set (100 test engines)
+- **Dataset:** NASA C-MAPSS Turbofan Engine Degradation Simulation (subset FD001)
+- **Models:** Linear Regression, Decision Tree, Random Forest
+- **Final test:** Official NASA test set (100 engines)
 
-> [!NOTE]
-> **Data & Experiment Reference:**  
-> All experimental results and metrics in this report are derived directly from the executed notebooks in `notebooks/` (01 – 06) (NASA C-MAPSS FD001, seed `42`, piecewise linear RUL target capped at `125` cycles).
+> All numbers in this report come from the notebooks in `notebooks/` (01 – 06), seed `42`, RUL target capped at `125` cycles.
 
 ---
 
-## 📑 Table of Contents
-1. [Abstract](#1-abstract)
-2. [Problem Statement](#2-problem-statement)
-3. [Objectives](#3-objectives)
-4. [Methodology](#4-methodology)
-   - [Data Ingestion & Integrity Checks](#1-data-ingestion--integrity-checks)
-   - [Exploratory Data Analysis (EDA)](#2-exploratory-data-analysis-eda)
-   - [RUL Target Formulation](#3-rul-target-formulation)
-   - [Engine-Level Splitting](#4-engine-level-splitting)
-   - [Feature Engineering (71 Features)](#5-feature-engineering-71-features)
-   - [Data Leakage Prevention Checks](#6-data-leakage-prevention-checks)
-   - [Model Training & Cross-Validation](#7-model-training--cross-validation)
-   - [Official NASA Test Evaluation](#8-official-nasa-test-evaluation)
-5. [Results & Benchmark Evaluation](#5-results--benchmark-evaluation)
-   - [Overall Model Comparison](#overall-model-comparison)
-   - [Impact of Feature Engineering](#impact-of-feature-engineering)
-   - [Feature Importance & Lifecycle Error Dynamics](#feature-importance--lifecycle-error-dynamics)
-6. [Conclusion & Future Scope](#6-conclusion--future-scope)
-7. [Core Concepts & Simple Explanations](#7-core-concepts--simple-explanations)
-8. [Comprehensive Viva Questions & Answers](#8-comprehensive-viva-questions--answers)
+## Contents
+1. Abstract
+2. Problem Statement
+3. Objectives
+4. Method
+5. Results
+6. Conclusion and Future Scope
+7. Key Terms in Simple Words
+8. Viva Questions and Answers
 
 ---
 
 ## 1. Abstract
 
-This project focuses on estimating the **Remaining Useful Life (RUL)** of turbofan engines using multivariate time-series sensor data and classical machine learning techniques. We utilize the benchmark **NASA C-MAPSS FD001** subset, consisting of **100 training engines** run to run-to-failure conditions and **100 test engines** truncated at an operational cycle prior to failure.
+We predict the **Remaining Useful Life (RUL)** of aircraft engines — how many more cycles an engine can run before it
+fails — from its sensor readings. We use the **NASA C-MAPSS FD001** data: 100 training engines recorded until failure and
+100 test engines whose recording stops before failure.
 
-After screening and dropping **7 invariant/constant sensors**, we designed a piecewise-linear RUL target capped at **125 cycles** to reflect early-life non-degraded operating states. From the **14 informative sensors**, we engineered **71 time-series degradation features** per engine computed strictly from historical cycles: 10-cycle rolling means, standard deviations, rolling linear regression slopes, and deviations from each engine's healthy initial baseline.
+We removed **7 sensors that never change**, capped the RUL target at **125 cycles**, and built **71 features** for each
+cycle using only the engine's past: moving averages, standard deviations, trend slopes and the drift of each sensor from
+the engine's own healthy start.
 
-Three diverse regression architectures (**Random Forest**, **XGBoost**, and **Elastic Net**) were tuned with 3-fold `GroupKFold` cross-validation on 80 training engines and compared against 20 held-out validation engines. The champion model, **XGBoost**, achieved an **RMSE of 10.14 cycles**, an **MAE of 7.40 cycles**, and an **$R^2$ score of 0.94** on the official NASA test set, drastically outperforming a naive average baseline (RMSE 41.94). Furthermore, compared to models trained on raw sensor values alone, our engineered degradation features delivered an error reduction of **35% to 38%**.
+We trained three models from the course — **Linear Regression, Decision Tree and Random Forest** — tuned them with
+3-fold cross-validation on 80 training engines, and compared them on 20 validation engines. The best model,
+**Random Forest**, reached **RMSE 11.44 cycles, MAE 8.27 cycles and R² 0.92** on the official NASA test set, compared
+with RMSE 41.94 for a simple "always predict the average" baseline. The engineered features reduced the Random Forest error
+by **35 %** compared with raw sensor values.
 
 ---
 
 ## 2. Problem Statement
 
-Given the multivariate sensor observation history of an industrial turbofan engine up to the current operational cycle $t$, predict the Remaining Useful Life (RUL)—the exact number of remaining flight cycles before the engine reaches terminal operational failure.
+Given the sensor history of an engine up to the current cycle *t*, predict its RUL (number of cycles left before failure).
+RUL is a number, so this is a **regression** problem.
 
-### Operational Constraints & Requirements:
-1. **Zero Future Leakage:** At any time step $t$, the model must only leverage information available at or before cycle $t$.
-2. **Generalizability to Unseen Units:** The model must reliably generalize to novel, previously unseen engines with varying initial health states and operational lifespans.
+Rules:
+1. **No future information:** at cycle *t* we may only use data from cycles ≤ *t*.
+2. **Work on new engines:** the model must predict well for engines it has never seen.
 
 ---
 
 ## 3. Objectives
 
-- [x] **Data Ingestion & Integrity Auditing:** Validate sensor feeds, check for missing values, eliminate redundant variables, and profile engine operational distributions.
-- [x] **RUL Target Construction:** Formulate an operational RUL target with an optimal saturation threshold (piecewise linear cap at 125 cycles).
-- [x] **Strict Leakage-Free Feature Engineering:** Develop rolling statistics and baseline deviation metrics calculated strictly within each engine's backward history.
-- [x] **Cross-Validation & Hyperparameter Tuning:** Optimize classical machine learning pipelines (Random Forest, XGBoost, Elastic Net) using engine-level grouping (`GroupKFold`).
-- [x] **Lifecycle Error Stratification:** Analyze performance divergence between early-life healthy stages versus late-life degraded regimes.
-- [x] **Benchmark Validation on Official Test Set:** Evaluate the best-performing pipeline on the 100 official NASA C-MAPSS test engines against ground-truth targets.
+- [x] Load and check the data (missing values, duplicates, useless sensors).
+- [x] Explore the data (EDA) with charts.
+- [x] Build the RUL target (capped at 125 cycles).
+- [x] Build leakage-free features from each engine's own past.
+- [x] Train and tune Linear Regression, Decision Tree and Random Forest with cross-validation.
+- [x] Compare errors in early life and late life.
+- [x] Test the best model on the 100 official NASA test engines.
 
 ---
 
-## 4. Methodology
+## 4. Method
 
-### 1. Data Ingestion & Integrity Checks
-- **Dimensions:** Exactly 100 engines in both training (`train_FD001.txt`) and testing (`test_FD001.txt`) sets.
-- **Completeness:** 0 missing values (NaNs) and 0 duplicate rows across all sensor recordings.
+### 4.1 Data check
+- 100 training engines (20,631 rows) and 100 test engines.
+- 26 columns: engine id, cycle, 3 operating settings, 21 sensors.
+- **0 missing values and 0 duplicate rows** → no cleaning needed.
 
-### 2. Exploratory Data Analysis (EDA)
-- **Lifespan Variability:** Training engine lifespans vary widely, spanning from **128 to 362 cycles** (mean lifespan $\approx 206$ cycles).
-- **Sensor Pruning:** 7 sensors exhibit near-zero variance across all operating cycles:
-  $$\text{Dropped Sensors} = \{s_1, s_5, s_6, s_{10}, s_{16}, s_{18}, s_{19}\}$$
-  Pruning these eliminates uninformative dimensions and reduces overfitting risk.
-- **Operating Conditions:** Subset FD001 operates under a single nominal operating condition (sea-level, steady state); therefore, multi-regime condition normalization is not required.
+### 4.2 Exploratory Data Analysis (notebook 01)
+- Engines live between **128 and 362 cycles** (average ≈ 206).
+- **Variance Threshold:** 7 sensors never change (≈ 0 variance) → removed: s1, s5, s6, s10, s16, s18, s19. **14 sensors kept.**
+- FD001 has **one operating condition**, so the 3 settings are dropped and no condition normalisation is needed.
+- **Pearson correlation:** s11, s4, s12, s7, s15, s21, s20 are most related to RUL (|r| ≈ 0.6–0.7).
+- Sensors are noisy but clearly drift near failure → looking at the **trend over several cycles** helps.
 
-### 3. RUL Target Formulation
-- **Raw RUL:** Defined as the total life of engine $i$ minus current cycle $t$:
-  $$\text{RUL}_{\text{raw}}(i, t) = \text{max\_cycle}_i - t$$
-- **Capped Piecewise Target:** Turbofan components do not exhibit measurable mechanical degradation during initial flight hours. In accordance with established literature, RUL is capped at **125 cycles**:
-  $$\text{RUL}(i, t) = \min\left(125, \; \text{max\_cycle}_i - t\right)$$
+### 4.3 RUL target (notebook 02)
+- RUL = last cycle of the engine − current cycle.
+- Capped at **125**: RUL = min(125, last cycle − current cycle). A healthy engine looks the same at 300 or 150 cycles left,
+  so we call every healthy engine "125".
 
-### 4. Engine-Level Splitting
-- **Partition:** 80 training engines (16,138 cycles) and 20 validation engines (4,493 cycles).
-- **Leakage Prevention:** Split strictly by `unit_nr`. No engine appears in both sets, avoiding synthetic cross-correlation across identical physical units.
+### 4.4 Train / validation split
+- **80 engines for training, 20 for validation**, split **by engine** (all rows of one engine stay together).
+- Splitting rows randomly would put almost identical rows of the same engine in both sets → **data leakage**.
 
-### 5. Feature Engineering (71 Features)
-From the 14 retained sensors, features are generated on-the-fly per engine:
-1. **Cycle Index:** Temporal marker of cumulative operating hours ($1$ feature).
-2. **Raw Sensors:** Current instantaneous values ($14$ features).
-3. **Rolling Mean (10-cycle window):** Moving average smoothing high-frequency measurement noise ($14$ features).
-4. **Rolling Standard Deviation (10-cycle window):** Moving dispersion capturing rising vibration/instability ($14$ features).
-5. **Rolling Linear Slope (10-cycle window):** First-derivative trend measuring degradation velocity ($14$ features).
-6. **Healthy Baseline Drift (`_dev`):** Deviation of current sensor reading from the engine's initial healthy baseline (mean of first 10 cycles) ($14$ features).
+### 4.5 Feature engineering (71 features)
+For each of the 14 sensors, using the last 10 cycles of the **same engine**:
 
-$$\text{Total Features} = 1 + 14 + 14 + 14 + 14 + 14 = 71$$
+| Feature | Meaning |
+|---|---|
+| `_mean` | moving average → removes noise |
+| `_std` | standard deviation → is the sensor becoming unstable? |
+| `_slope` | slope of a straight line through the last 10 readings → the **trend** |
+| `_dev` | moving average − the engine's own healthy start (first 10 cycles) → how much the engine has **drifted** |
 
-### 6. Data Leakage Prevention Checks
-- **Backward-Facing Windows:** Rolling windows and baseline metrics use expanding/backward windows only.
-- **Empirical Truncation Invariance Test:** Evaluated features computed on shortened histories against full histories; identical rows yielded an exact diff of 0.
-- **Target Independence:** Target RUL was completely isolated from the feature computation matrix.
+Plus `cycle` and the 14 raw sensors: **1 + 14 + 14 × 4 = 71 features.**
 
-### 7. Model Training & Cross-Validation
-- **Search Strategy:** Systematic Grid Search over key tree/regularization hyperparameters.
-- **Cross-Validation Scheme:** 3-fold `GroupKFold` grouped on engine IDs within the 80 training engines.
-- **Leakage-Safe Scaling:** For Elastic Net, `StandardScaler` was encapsulated within an `sklearn.pipeline.Pipeline`, ensuring scaling statistics were fitted strictly on training folds.
+### 4.6 Leakage checks
+- Features recomputed with only the first 100 cycles of an engine are identical → **no future data is used**.
+- No missing values; the target is not a feature; training and validation engines do not overlap.
 
-### 8. Official NASA Test Evaluation
-- **Final Fit:** The champion model selected from validation was retrained on the complete 100-engine training corpus.
-- **Inference Setup:** For each of the 100 test engines, features were derived from its available operational trajectory, and a single prediction was generated at its final observed cycle ($t_{\text{last}}$).
-- **Ground Truth:** Predictions were evaluated against the true NASA ground truth (`RUL_FD001.txt`, capped at 125).
+### 4.7 Models and tuning (notebooks 03 – 05)
 
----
+| Model | Idea | Settings tried |
+|---|---|---|
+| **Linear Regression** | weighted sum of features (OLS), features standardised | none to tune |
+| **Decision Tree** | yes/no questions on features, prediction = average RUL in the leaf (CART) | `max_depth`, `min_samples_leaf` (pre-pruning), `ccp_alpha` (post-pruning) |
+| **Random Forest** | average of 150 trees, each trained on a bootstrap sample (bagging) | `max_depth`, `min_samples_leaf` |
 
-## 5. Results & Benchmark Evaluation
+- Tuning: **GridSearchCV** with **3-fold cross-validation** (`GroupKFold`: one engine is never in two folds).
+- The 20 validation engines are used only to compare the tuned models.
 
-### Overall Model Comparison
-
-The table below summarizes performance across the 20 held-out validation engines and the official 100 NASA test engines:
-
-| Model Architecture | Val RMSE (cycles) | Val MAE (cycles) | Val $R^2$ | Test RMSE (cycles) | Test MAE (cycles) | Test $R^2$ | Status |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Baseline (Mean Predictor)** | 41.72 | 36.93 | 0.00 | 41.94 | 34.83 | -0.10 | Naive Baseline |
-| **Elastic Net** | 15.04 | 12.01 | 0.87 | 16.13 | 13.14 | 0.84 | Regularized Linear |
-| **Random Forest** | 10.34 | 6.77 | 0.94 | 11.44 | 8.27 | 0.92 | Ensemble Bagging |
-| **XGBoost (Best Model)** | **9.60** | **6.05** | **0.95** | **10.14** | **7.40** | **0.94** | **Champion Model** |
+### 4.8 Official test
+- The best model (chosen on validation) is retrained on all 100 training engines.
+- Each test engine is predicted once, at its **last recorded cycle**, and compared with `RUL_FD001.txt` (capped at 125).
 
 ---
 
-### Impact of Feature Engineering
+## 5. Results
 
-To validate the hypothesis that temporal and drift features significantly boost classical machine learning performance, models were benchmarked on raw sensor values versus engineered feature sets:
+### 5.1 Model comparison
 
-| Model | RMSE (Raw Sensors Only) | RMSE (With Engineered Features) | Error Reduction (%) |
-| :--- | :---: | :---: | :---: |
-| **Random Forest** | 15.98 | **10.34** | **-35.3%** |
-| **XGBoost** | 15.53 | **9.60** | **-38.2%** |
-| **Elastic Net** | 17.96 | **15.04** | **-16.3%** |
+| Model | Val RMSE | Val MAE | Val R² | Test RMSE | Test MAE | Test R² |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Baseline (average) | 41.72 | 36.93 | 0.00 | 41.94 | 34.83 | −0.10 |
+| Linear Regression | 15.29 | 11.94 | 0.87 | 15.85 | 12.84 | 0.84 |
+| Decision Tree | 14.13 | 9.18 | 0.89 | 14.96 | 10.80 | 0.86 |
+| **Random Forest (best)** | **10.34** | **6.77** | **0.94** | **11.44** | **8.27** | **0.92** |
 
-> [!TIP]
-> **Key Finding:** Feature engineering reduced prediction error by **~38%** for gradient boosting, confirming that explicit temporal drift features effectively bridge the gap between classical tree models and sequential dynamics.
+- **Linear Regression** can only fit a straight line, but the real pattern is "flat, then a fast drop".
+- **Decision Tree** learns the non-linear pattern but overfits easily: training error keeps falling as the tree gets deeper,
+  while validation error stops improving after depth ≈ 7–10. Pruning was needed.
+- **Random Forest** averages 150 different trees → much lower variance → best model.
 
----
+### 5.2 Effect of feature engineering (validation RMSE)
 
-### Feature Importance & Lifecycle Error Dynamics
+| Model | Raw sensors only | With engineered features | Improvement |
+|:---|:---:|:---:|:---:|
+| Linear Regression | 17.37 | 15.29 | 12.0 % |
+| Decision Tree | 17.73 | 14.13 | 20.3 % |
+| **Random Forest** | 15.98 | **10.34** | **35.3 %** |
 
-#### 1. Dominant Features & Sensors
-- **Most Predictive Feature Type:** Deviation from healthy start (`_dev`), which isolates physical degradation from engine-to-engine manufacturing variation.
-- **Top 5 Informative Sensors:**
-  1. `s11` — High-Pressure Compressor (HPC) Static Pressure
-  2. `s15` — Bypass Duct Static Pressure
-  3. `s20` — High-Pressure Turbine (HPT) Coolant Bleed
-  4. `s4` — Low-Pressure Turbine (LPT) Total Temperature
-  5. `s21` — Low-Pressure Turbine (LPT) Coolant Bleed
+### 5.3 Most useful features
+- Feature type: **`_dev` (drift from the engine's own healthy start) ≈ 85 %** of Random Forest importance, followed by moving averages.
+- Single most important feature: **`s11_dev`** (drift of the HPC outlet static pressure), ≈ 74 % of importance.
+- Other useful sensors: s4 (LPT outlet temperature), s15 (bypass ratio), s17 (bleed enthalpy), s2 (LPC outlet temperature), s9 (core speed).
 
-#### 2. Early-Life vs. Late-Life Error Behavior
-- **Early-Life Regimes ($\text{RUL} = 125$):** XGBoost RMSE = **7.33 cycles**. Most engines are healthy and stably predicted at the cap.
-- **Late-Life Regimes ($\text{RUL} < 125$):** XGBoost RMSE = **11.45 cycles**. Error increases slightly because physical degradation exhibits non-linear acceleration as thermal and mechanical breakdown compounds.
+### 5.4 Early vs late life (validation RMSE)
 
----
+| Model | Early (RUL > 100) | Late (RUL ≤ 100) |
+|:---|:---:|:---:|
+| Linear Regression | 12.23 | 17.86 |
+| Decision Tree | 10.01 | 17.33 |
+| Random Forest | 8.01 | 12.26 |
 
-## 6. Conclusion & Future Scope
-
-### Conclusion
-Classical machine learning pipelines—when paired with domain-informed temporal degradation features—deliver state-of-the-art predictive performance on industrial turbofan degradation datasets. **XGBoost** proved to be the champion model, attaining an official test **RMSE of 10.14 cycles** and an **$R^2$ of 0.94**, closely followed by Random Forest (RMSE 11.44).
-
-### Future Scope (Phase 2 & Beyond)
-1. **Multi-Condition Subsets:** Extend methodology to C-MAPSS subsets FD002 and FD004, which feature 6 operational regimes requiring flight-envelope condition normalization.
-2. **Deep Sequential Architectures:** Implement sequence-aware neural networks (LSTM, GRU, Temporal Convolutional Networks, and Transformers) to automatically learn temporal dynamics.
-3. **Uncertainty Quantification:** Implement conformal prediction, quantile regression, or Bayesian neural networks to provide certified confidence intervals for maintenance safety margins.
-4. **Asymmetric NASA Scoring Optimization:** Direct loss function alignment using custom asymmetric loss functions that penalize dangerous over-estimation ($d > 0$) more severely than conservative under-estimation.
+Errors are larger in late life. Early life looks easier only because of the cap: most early rows have target 125.
 
 ---
 
-## 7. Core Concepts & Simple Explanations
+## 6. Conclusion and Future Scope
 
-| Term / Concept | Plain-Language Explanation |
-| :--- | :--- |
-| **RUL (Remaining Useful Life)** | The number of operational flight cycles an engine can safely perform before failure. Example: If an engine fails at cycle 200 and is currently at cycle 150, its RUL is 50. |
-| **Rolling Mean** | The average sensor reading over the previous 10 cycles. It removes instantaneous sensor noise and exposes the underlying trend. |
-| **Rolling Slope** | The slope of a best-fit straight line through the last 10 readings. It indicates whether sensor readings are trending up or down, and at what speed. |
-| **Healthy Baseline Drift (`_dev`)** | The difference between the current sensor reading and the engine's initial healthy baseline (first 10 cycles). It captures accumulated physical wear. |
-| **Random Forest** | An ensemble of hundreds of decision trees trained on random subsets of data and features; the final prediction is the average of all individual trees. |
-| **XGBoost** | An ensemble of sequential decision trees where each subsequent tree is trained specifically to correct the residual errors made by preceding trees. |
-| **Elastic Net** | A regularized linear regression model combining $L_1$ (Lasso) and $L_2$ (Ridge) penalties to shrink coefficients and eliminate non-informative features. |
-| **RMSE & MAE** | **RMSE** measures typical error magnitude in cycles with high penalties for large mistakes; **MAE** measures the unweighted average error in cycles. |
-| **Engine-Level Validation** | Ensuring all records for a given engine reside exclusively in either the training set or the validation set, ensuring models are tested strictly on unseen units. |
+**Conclusion:** with simple engineered features and classical ML, **Random Forest** predicts the RUL of the 100 official test
+engines with **RMSE 11.44 and MAE 8.27 cycles (R² 0.92)**, against RMSE 41.94 for the baseline. The most useful idea was to
+measure how far each sensor has drifted from the engine's **own healthy start**.
+
+**Limitations:** only FD001 (one operating condition, one fault type, simulated data); one 80/20 split; moving-average windows
+react with a small delay; the cap of 125 is a modelling choice.
+
+**Future scope:** apply the method to FD002 – FD004 (several operating conditions) and use repeated cross-validation for
+more reliable comparisons.
 
 ---
 
-## 8. Comprehensive Viva Questions & Answers
+## 7. Key Terms in Simple Words
 
-### Q1: Why is Remaining Useful Life (RUL) formulated as a regression problem rather than classification?
-> **Answer:**  
-> RUL represents a continuous quantity—the exact number of remaining operational cycles until failure. Formulating it as regression provides granular scheduling visibility (e.g., "replace part in 14 cycles"). Classification into discrete buckets (e.g., "healthy" vs. "failing") loses critical temporal precision necessary for maintenance logistics.
-
----
-
-### Q2: How is the RUL target calculated from the C-MAPSS training data?
-> **Answer:**  
-> In the training set, engines are operated until complete failure. The maximum cycle observed for engine $i$ is denoted $\text{max\_cycle}_i$. At any current cycle $t$, raw RUL is calculated as:
-> $$\text{RUL}_{\text{raw}} = \text{max\_cycle}_i - t$$
-> At the final cycle ($t = \text{max\_cycle}_i$), RUL equals 0. A piecewise cap of 125 cycles is subsequently applied.
-
----
-
-### Q3: Why is the RUL target capped at 125 cycles?
-> **Answer:**  
-> During the early operational lifespan of an engine, components experience negligible mechanical wear. Sensor telemetry during cycle 20 is indistinguishable from cycle 80. Without a cap, a model is forced to predict arbitrary differences between healthy states. Capping at 125 reflects the physical reality that degradation only manifests measurably in the final ~125 cycles of life.
+| Term | Meaning |
+|:---|:---|
+| **RUL** | Cycles left before failure. Fails at cycle 200, now at cycle 150 → RUL = 50. |
+| **Moving average** | Average of the last 10 readings — removes noise. |
+| **Trend slope** | Slope of a straight line through the last 10 readings — is the sensor going up or down, and how fast? |
+| **Drift (`_dev`)** | Current moving average − the engine's own healthy start value. |
+| **Linear Regression** | Prediction = weighted sum of features; weights found by OLS (minimise squared errors). |
+| **Decision Tree** | A flow chart of yes/no questions; the leaf predicts the average RUL of its training rows. |
+| **Pruning** | Limiting tree growth (`max_depth`, `min_samples_leaf`) or cutting weak branches (`ccp_alpha`) to stop overfitting. |
+| **Random Forest** | Many trees on random samples (bagging); the prediction is their average. |
+| **MAE / RMSE / R²** | Average error / typical error with big mistakes counted more / share of variation explained. |
+| **Cross-validation** | Split training data into k folds, train on k−1, test on the remaining one, repeat. |
+| **Data leakage** | The model sees information during training that it would not have in real life. |
 
 ---
 
-### Q4: Why must the train/validation split be performed at the engine level rather than random row-level splitting?
-> **Answer:**  
-> Consecutive cycles from the same engine share virtually identical operational conditions and degradation signatures. A random row split would place cycle $t$ in train and cycle $t+1$ from the same engine in validation, causing severe data leakage. Engine-level splitting (`GroupKFold`) ensures the model is evaluated on completely unseen engines.
+## 8. Viva Questions and Answers
 
----
+**Q1. Why is RUL a regression problem?**
+RUL is a number of cycles, not a category. Regression gives an exact estimate ("about 14 cycles left").
 
-### Q5: Which sensors were removed during preprocessing and why?
-> **Answer:**  
-> Sensors **s1, s5, s6, s10, s16, s18, and s19** were dropped. Across all engines and operational cycles, their standard deviations are virtually 0 (constant readings). Because they contain no variance and no degradation signal, removing them prevents noise and redundant computation.
+**Q2. How is the RUL target calculated?**
+Training engines run until failure. RUL = last cycle of the engine − current cycle, so it is 0 at the last cycle. Then it is capped at 125.
 
----
+**Q3. Why cap RUL at 125?**
+A healthy engine shows no wear in its sensors, so 300 and 150 cycles left look the same. The cap tells the model "healthy = 125"
+and lets it focus on the degradation phase.
 
-### Q6: Why was operating-condition normalization omitted for subset FD001?
-> **Answer:**  
-> FD001 is simulated under a single operating regime (sea-level, steady altitude/Mach). Unlike FD002 or FD004 (which alternate across 6 operational regimes requiring k-means or z-score normalization per regime), FD001 sensor variations are solely due to wear and noise.
+**Q4. Why split by engine instead of by row?**
+Rows of the same engine are almost identical. A random row split would put the same engine in train and validation → data
+leakage and an over-optimistic score.
 
----
+**Q5. Which sensors were removed and why?**
+s1, s5, s6, s10, s16, s18, s19 — they (almost) never change, so their variance is ≈ 0 (Variance Threshold). They carry no information.
 
-### Q7: How do you guarantee zero data leakage during rolling feature engineering?
-> **Answer:**  
-> All rolling windows (mean, standard deviation, linear regression slope) are computed backwards using only time steps $\le t$. In addition, an empirical audit verified that features computed on a truncated engine history ($t \le 50$) match the identical rows in a full history ($t \le 200$) with 0 difference.
+**Q6. Why no operating-condition normalisation?**
+FD001 has only one operating condition (setting_3 is always 100). Datasets FD002/FD004 have six and would need it.
 
----
+**Q7. How do you make sure features do not use the future?**
+All rolling windows look backwards only (cycles ≤ *t*). We also recomputed features on a shortened history and got exactly the same values.
 
-### Q8: What occurs during the initial cycles (e.g., cycles 1–9) where a 10-cycle window is incomplete?
-> **Answer:**  
-> Expanding windows are used (`min_periods=1`). At cycle 1, the mean is the instantaneous value, while standard deviation and slope default safely to 0. By cycle 10, the full window is active. No forward rows are ever imputed.
+**Q8. What happens in the first 9 cycles, before the 10-cycle window is full?**
+The window uses the cycles available so far. At cycle 1 the moving average is the reading itself, and std and slope are 0.
 
----
+**Q9. Which features helped most?**
+The `_dev` features (drift from the engine's own healthy start), ≈ 85 % of the Random Forest importance. Each engine starts
+slightly differently, so comparing it with its own start shows the real wear.
 
-### Q9: Which engineered features provided the highest predictive gain?
-> **Answer:**  
-> The **deviation from healthy start (`_dev`)** yielded the highest feature importance. Because each engine has slight initial calibration variances, measuring the drift relative to its own first 10 cycles isolates mechanical wear from initial hardware offsets.
+**Q10. Why does Linear Regression need scaling but the trees do not?**
+Scaling makes the linear weights comparable. Trees only compare a feature with a threshold, so units do not matter.
 
----
+**Q11. Why is Linear Regression the weakest model?**
+It can only draw a straight line. The sensors stay flat for a long time and then change fast near failure — a non-linear pattern.
 
-### Q10: Why does Elastic Net require feature standardization, whereas Random Forest and XGBoost do not?
-> **Answer:**  
-> Elastic Net optimizes an objective function with $L_1$ and $L_2$ coefficient penalties ($\lambda_1 \|\beta\|_1 + \lambda_2 \|\beta\|_2^2$). If features are on different scales (e.g., temperatures in hundreds vs. pressure ratios near 1), unscaled penalties unfairly penalize large-scale features. Tree-based models split points based on order rankings and are completely invariant to monotonic feature scaling.
+**Q12. How does a Decision Tree choose a split in regression?**
+CART tries features and thresholds and picks the split that reduces the **MSE** the most. Gini and Entropy are the same idea for classification.
 
----
+**Q13. How did you handle overfitting in the Decision Tree?**
+Pruning, chosen by cross-validation: `max_depth` and `min_samples_leaf` (pre-pruning) and `ccp_alpha` (cost-complexity post-pruning).
+The depth plot in notebook 04 shows training error falling while validation error stops improving.
 
-### Q11: How were hyperparameters tuned without contaminating the validation set?
-> **Answer:**  
-> Hyperparameters were tuned strictly on the 80 training engines using 3-fold `GroupKFold` grid search. The 20 validation engines were set aside as a held-out benchmark solely for model comparison. The test set was untouched until final model verification.
+**Q14. Why is Random Forest better than one Decision Tree?**
+One tree has high variance (small data changes → a different tree). Random Forest trains many trees on bootstrap samples
+with random feature subsets and averages them → lower variance (bagging).
 
----
+**Q15. How were hyper-parameters tuned without touching the validation set?**
+GridSearchCV with 3-fold GroupKFold on the 80 training engines only. Validation engines were used once to compare the
+tuned models; the test set only at the very end.
 
-### Q12: Why was model prediction error lower in early life than in late life?
-> **Answer:**  
-> In early life, the true target is capped at a constant value (125 cycles). The model easily learns to predict ~125 for healthy sensor profiles (RMSE 7.33). In late life, engines degrade non-linearly, and physical wear accelerates at different rates across units, resulting in higher variance and error (RMSE 11.45).
+**Q16. Why are errors larger in late life?**
+Near failure, engines wear out at different speeds, so RUL is harder to predict. Early life looks easy because the target there is mostly the constant 125.
 
----
+**Q17. Is using `cycle` as a feature leakage?**
+No. The engine's age (cycles flown so far) is known at prediction time; it says nothing about when the engine will fail.
 
-### Q13: What is the champion model and how do the contenders compare?
-> **Answer:**  
-> **XGBoost** is the best model with an official test RMSE of **10.14 cycles** and MAE of **7.40 cycles** ($R^2 = 0.94$). Random Forest performed comparably well (Test RMSE 11.44, MAE 8.27), while Elastic Net had higher error (Test RMSE 16.13) due to linear modeling constraints.
+**Q18. How was the official test set evaluated?**
+The best model was retrained on all 100 training engines. For each test engine we built features from its own history and
+predicted once at its last recorded cycle, then compared with `RUL_FD001.txt` (capped at 125).
 
----
+**Q19. What does the web app do?**
+It loads the best model (Random Forest). You can enter the current cycle and 14 sensor readings to get a predicted RUL and a
+health status, or pick one of the 100 NASA test engines to compare the prediction with the true RUL.
 
-### Q14: What is the NASA Asymmetric Scoring Function?
-> **Answer:**  
-> The NASA scoring metric penalizes over-estimation ($\hat{y} > y$, predicting an engine has more life than it actually does) much more severely than under-estimation ($\hat{y} < y$):
-> $$s = \sum_{i=1}^{N} \begin{cases} e^{-\frac{d_i}{13}} - 1 & \text{for } d_i < 0 \text{ (early / conservative)} \\ e^{\frac{d_i}{10}} - 1 & \text{for } d_i \ge 0 \text{ (late / catastrophic)} \end{cases}$$
-> where $d_i = \hat{y}_i - y_i$. Late predictions risk in-flight catastrophic engine failure.
-
----
-
-### Q15: Is including the operational `cycle` feature considered data leakage?
-> **Answer:**  
-> No. At any real-world operational inspection point, the total flight cycles logged since overhaul is an observed, documented operational metadata parameter. It contains no future information about when the engine will eventually fail.
-
----
-
-### Q16: How was inference executed on the official NASA test dataset?
-> **Answer:**  
-> For each of the 100 test engines, sensor histories are observed up to an unrevealed cycle $t_{\text{last}}$. Feature engineering was applied across the available history, and a single prediction was generated for $t_{\text{last}}$. Predictions were compared against NASA's ground-truth RUL vector capped at 125.
-
----
-
-### Q17: What are the primary technical limitations of this Phase 1 study?
-> **Answer:**  
-> 1. Evaluated solely on the single-condition FD001 dataset.
-> 2. Utilizes simulated C-MAPSS data rather than noisy real-world airline telemetry.
-> 3. Employs a single fixed train/validation partition rather than repeated nested cross-validation.
-> 4. Fixed-size rolling windows introduce lag during abrupt degradation onset.
-> 5. Point predictions lack probabilistic uncertainty intervals.
+**Q20. What are the limitations?**
+Only FD001, simulated data, one train/validation split, rolling windows react with a small delay, and the cap of 125 is a modelling choice.
