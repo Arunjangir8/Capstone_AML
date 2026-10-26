@@ -1,4 +1,10 @@
-# Academic Documentation
+# Academic Documentation & Technical Report
+
+**Project 7: Remaining Useful Life Prediction for Industrial Engines**  
+*Predictive Maintenance via Sensor Features and Machine Learning*  
+*Course: Advanced Machine Learning (AML)*  
+*Team Contributors: Sarvesh Choudhary, Arun Jangir, Keshav Chhabra*  
+*Dataset: NASA C-MAPSS Turbofan Engine Degradation Simulation (FD001)*  
 
 All numbers come from `predictive_maintenance_aml_phase1.ipynb` (NASA C-MAPSS FD001, seed 42, RUL cap 125).
 
