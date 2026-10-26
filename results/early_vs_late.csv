@@ -1,9 +1,0 @@
-Model,Stage,Rows,RMSE,MAE
-Baseline,early,2050,35.67,35.11
-Baseline,late,2020,47.07,38.77
-Random Forest,early,2050,8.01,4.97
-Random Forest,late,2020,12.26,8.59
-XGBoost,early,2050,7.33,4.52
-XGBoost,late,2020,11.45,7.61
-Elastic Net,early,2050,12.51,10.2
-Elastic Net,late,2020,17.22,13.83
