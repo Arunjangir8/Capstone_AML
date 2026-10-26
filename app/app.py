@@ -18,6 +18,12 @@ st.set_page_config(page_title="Engine RUL Predictor", layout="wide")
 
 @st.cache_resource
 def load_everything():
+    """Load cached models, processed feature matrices, validation metrics, and sensor presets.
+
+    Returns:
+        tuple: (features, test, best_model_name, best_rmse, model, sensors,
+                healthy_start, presets, raw_test)
+    """
     features = (PROCESSED_DATA / "feature_list.txt").read_text().split()
     test = pd.read_csv(PROCESSED_DATA / "test_features.csv")
     val_table = pd.read_csv(RESULTS / "final_validation_results.csv", index_col=0)
@@ -41,10 +47,20 @@ FEATURES, test, BEST, BEST_RMSE, model, SENSORS, healthy_start, presets, raw_tes
 
 
 def predict(X):
+    """Generate bounded RUL prediction for an engine feature vector.
+
+    Clamps prediction within [0, RUL_CAP] cycles.
+    """
     return float(min(max(model.predict(X[FEATURES])[0], 0), RUL_CAP))
 
 
 def show_result(predicted):
+    """Display color-coded status banner based on remaining useful life cycles.
+
+    - < 30 cycles: Critical alert (immediate maintenance needed)
+    - 30 to 79 cycles: Warning status (scheduled maintenance recommended)
+    - >= 80 cycles: Healthy status (normal operation)
+    """
     if predicted < 30:
         st.error(f"### Predicted RUL: {predicted:.0f} cycles\nCritical — schedule maintenance now")
     elif predicted < 80:
