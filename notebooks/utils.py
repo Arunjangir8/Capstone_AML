@@ -32,25 +32,45 @@ COLUMNS = ["unit", "cycle", "setting_1", "setting_2", "setting_3"] + [f"s{i}" fo
 
 
 def load_raw(name):
-    """Read one NASA text file, e.g. load_raw("train_FD001.txt")."""
+    """Read one NASA C-MAPSS raw text file.
+
+    Parameters:
+        name (str): Filename inside data/raw (e.g. 'train_FD001.txt').
+
+    Returns:
+        pd.DataFrame: Tabular sensor and engine operational data.
+    """
     return pd.read_csv(RAW_DATA / name, sep=r"\s+", header=None, names=COLUMNS)
 
 
 def evaluate(y_true, y_pred):
-    """RMSE, MAE and R² rounded for display."""
+    """Compute regression evaluation metrics (RMSE, MAE, R²).
+
+    Parameters:
+        y_true (array-like): Ground truth target values.
+        y_pred (array-like): Model predictions.
+
+    Returns:
+        dict: Rounded evaluation metrics dictionary.
+    """
     return {"RMSE": round(float(np.sqrt(mean_squared_error(y_true, y_pred))), 2),
             "MAE": round(float(mean_absolute_error(y_true, y_pred)), 2),
             "R2": round(float(r2_score(y_true, y_pred)), 3)}
 
 
 def savefig(name):
+    """Format figure layout, save PNG to outputs/figures, and display plot."""
     plt.tight_layout()
     plt.savefig(FIGURES / f"{name}.png")
     plt.show()
 
 
 def plot_validation(name, y_true, y_pred, fig_name):
-    """Left: predicted vs true RUL. Right: error vs true RUL."""
+    """Generate validation diagnostic plots.
+
+    Left subplot: Predicted vs True RUL scatter plot.
+    Right subplot: Residual error vs True RUL scatter plot.
+    """
     fig, ax = plt.subplots(1, 2, figsize=(13, 4.5))
     ax[0].scatter(y_true, y_pred, s=3, alpha=0.3, color=COLORS[name])
     ax[0].plot([0, RUL_CAP], [0, RUL_CAP], "k--", lw=1, label="perfect prediction")
@@ -63,7 +83,11 @@ def plot_validation(name, y_true, y_pred, fig_name):
 
 
 def plot_test(name, y_true, y_pred, fig_name):
-    """Left: predicted vs true RUL. Right: the 100 test engines sorted by true RUL."""
+    """Generate official test set performance diagnostic plots.
+
+    Left subplot: Predicted vs True RUL scatter plot.
+    Right subplot: Test engines sorted by true RUL with model predictions overlaid.
+    """
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     fig, ax = plt.subplots(1, 2, figsize=(13, 4.5))
     ax[0].scatter(y_true, y_pred, color=COLORS[name])
@@ -78,7 +102,12 @@ def plot_test(name, y_true, y_pred, fig_name):
 
 
 def stage_table(rul_raw, y_true, y_pred):
-    """Error split into early life (true RUL > 100) and late life (true RUL <= 100)."""
+    """Calculate error metrics stratified by engine life stage.
+
+    Splits predictions into:
+    - Early life stage: true RUL > 100 cycles
+    - Late life stage: true RUL <= 100 cycles
+    """
     stage = np.where(np.asarray(rul_raw) > 100, "early (RUL > 100)", "late (RUL ≤ 100)")
     rows = []
     for st in ["early (RUL > 100)", "late (RUL ≤ 100)"]:
