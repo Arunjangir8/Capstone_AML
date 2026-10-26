@@ -1,6 +1,6 @@
 """Simple web app: predict the Remaining Useful Life (RUL) of a NASA test engine.
 
-Run from the project folder (after running notebooks 02-05 once):
+Run from the project folder:
     streamlit run app/app.py
 """
 import sys
@@ -11,14 +11,15 @@ import pandas as pd
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "notebooks"))
-from utils import load_features, load_raw, MODELS, RESULTS, FIGURES, RUL_CAP  # noqa: E402
+from utils import load_raw, MODELS, RESULTS, FIGURES, PROCESSED_DATA, RUL_CAP  # noqa: E402
 
 st.set_page_config(page_title="Engine RUL Predictor", page_icon="✈️", layout="wide")
 
 
 @st.cache_resource
 def load_everything():
-    _, test, features = load_features()
+    test = pd.read_csv(PROCESSED_DATA / "test_features.csv")   # only the small test table is needed
+    features = (PROCESSED_DATA / "feature_list.txt").read_text().split()
     models = {name: joblib.load(MODELS / f"{name.lower().replace(' ', '_')}.joblib")
               for name in ["XGBoost", "Random Forest", "Elastic Net"]}
     return test, features, models, load_raw("test_FD001.txt")
