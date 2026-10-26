@@ -7,8 +7,9 @@
 * **Sarvesh Choudhary** (`sarveshDhayal`)
 * **Arun Jangir** (`Arunjangir8`)
 * **Keshav Chhabra** (`keshavvchhabra`)
-* **Group Member 4**
-* **Group Member 5**
+* **Mayank Yadav** (`mayankgamerz25`)
+* **Rohit Godara** (`rohit-godara`)
+
 
 ## 📌 What is this project?
 Every engine starts healthy, slowly wears out and finally fails. From its **sensor readings** we predict the
