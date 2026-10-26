@@ -9,7 +9,7 @@
 
 > [!NOTE]
 > **Data & Experiment Reference:**  
-> All experimental results and metrics in this report are derived directly from the fully executed notebook [`predictive_maintenance_aml_phase1.ipynb`](file:///Users/sarveshchoudhary/Desktop/Capstone_AML/predictive_maintenance_aml_phase1.ipynb) (NASA C-MAPSS FD001, seed `42`, piecewise linear RUL target capped at `125` cycles).
+> All experimental results and metrics in this report are derived directly from the executed notebooks in `notebooks/` (01 – 06) (NASA C-MAPSS FD001, seed `42`, piecewise linear RUL target capped at `125` cycles).
 
 ---
 
