@@ -185,7 +185,7 @@ def build_pdf(filename="Phase2_Project_Report.pdf"):
     story.append(Paragraph("Predicting the Remaining Useful Life of Turbofan Engines", title_style))
     story.append(Paragraph("Phase 2: Deep Learning Sequence Modeling &amp; Hybrid ML/DL Architecture", subtitle_style))
     story.append(Paragraph("NASA C-MAPSS FD001 dataset", dataset_style))
-    story.append(Paragraph("Team: Keshav, Rohit Kumar, Mayank Yadav, Arun, Sarvesh Kumar", team_style))
+    story.append(Paragraph("Team: Keshav, Rohit Kumar, Sarvesh Kumar, Mayank Yadav, Arun", team_style))
 
     story.append(Paragraph("1. Introduction and Phase 2 Motivation", h1_style))
     story.append(Paragraph(
@@ -462,14 +462,14 @@ def build_pdf(filename="Phase2_Project_Report.pdf"):
 
     story.append(Paragraph("8. Team Members and Contributions", h1_style))
     team_data = [
-        [Paragraph("Name", th_style), Paragraph("Enrollment", th_style), Paragraph("Institutional Email", th_style), Paragraph("Main Technical Contribution", th_style)],
-        [Paragraph("Keshav", td_style), Paragraph("2401010221", td_style), Paragraph("keshav.2024@nst.rishihood.edu.in", td_style), Paragraph("Random Forest modeling &amp; Hybrid Architecture formulation", td_style)],
-        [Paragraph("Rohit Kumar", td_style), Paragraph("2401010392", td_style), Paragraph("rohit.kumar2024@nst.rishihood.edu.in", td_style), Paragraph("Temporal 1D-CNN pipeline &amp; sequence batching", td_style)],
-        [Paragraph("Mayank Yadav", td_style), Paragraph("2401010271", td_style), Paragraph("mayank.yadav2024@nst.rishihood.edu.in", td_style), Paragraph("PyTorch LSTM architecture &amp; AdamW regularization", td_style)],
-        [Paragraph("Arun", td_style), Paragraph("2401010098", td_style), Paragraph("arun.2024@nst.rishihood.edu.in", td_style), Paragraph("Ablation study experiments &amp; Streamlit app integration", td_style)],
-        [Paragraph("Sarvesh Kumar", td_style), Paragraph("2401010422", td_style), Paragraph("sarvesh.kumar2024@nst.rishihood.edu.in", td_style), Paragraph("Academic report, theoretical proofs &amp; IEEE paper", td_style)]
+        [Paragraph("Name", th_style), Paragraph("Enrollment", th_style), Paragraph("Institutional Email", th_style), Paragraph("Main Technical Contribution (Phase 2)", th_style)],
+        [Paragraph("Keshav", td_style), Paragraph("2401010221", td_style), Paragraph("keshav.2024@nst.rishihood.edu.in", td_style), Paragraph("Hybrid model formulation &amp; variance-reduction justification", td_style)],
+        [Paragraph("Rohit Kumar", td_style), Paragraph("2401010392", td_style), Paragraph("rohit.kumar2024@nst.rishihood.edu.in", td_style), Paragraph("Temporal 1D-CNN &amp; window-length ablation", td_style)],
+        [Paragraph("Sarvesh Kumar", td_style), Paragraph("2401010422", td_style), Paragraph("sarvesh.kumar2024@nst.rishihood.edu.in", td_style), Paragraph("Sequence data pipeline, evaluation protocol &amp; final benchmark; academic report &amp; IEEE paper", td_style)],
+        [Paragraph("Mayank Yadav", td_style), Paragraph("2401010271", td_style), Paragraph("mayank.yadav2024@nst.rishihood.edu.in", td_style), Paragraph("PyTorch LSTM, Huber loss &amp; AdamW regularization", td_style)],
+        [Paragraph("Arun", td_style), Paragraph("2401010098", td_style), Paragraph("arun.2024@nst.rishihood.edu.in", td_style), Paragraph("Representation &amp; loss ablations; Streamlit app", td_style)]
     ]
-    t_team = Table(team_data, colWidths=[75, 65, 160, 181.89])
+    t_team = Table(team_data, colWidths=[72, 65, 155, 189.89])
     t_team.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), HEADER_BG),
         ('BOX', (0,0), (-1,-1), 0.75, BORDER_COLOR),
