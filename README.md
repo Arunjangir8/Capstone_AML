@@ -50,10 +50,10 @@ Capstone_AML/
 │   ├── models/                                        Saved models (Classical .joblib & PyTorch .pt weights)
 │   └── results/                                       Prediction CSVs & benchmark evaluation tables
 ├── docs/                                              Academic documentation & deliverables
-│   ├── IEEE_Conference_Paper.tex                      Full 2-Column IEEE Conference Paper (.tex for Overleaf)
-│   ├── PHASE2_ACADEMIC_REPORT.md                      Comprehensive academic report with Literature Review
-│   ├── VIVA_VOCE_PHASE2.md                            Top 25 Viva Q&A with full mathematical derivations
-│   └── Phase2_Presentation_Slides.md                  Slide-by-slide presentation script & speaker notes
+│   ├── Phase1_IEEE_Report.pdf                         Phase 1 report (IEEE two-column format)
+│   ├── Phase1_IEEE_Report.tex                         Phase 1 report LaTeX source (IEEEtran, Overleaf-ready)
+│   ├── Phase2_IEEE_Report.pdf                         Phase 2 report (IEEE two-column format)
+│   └── Phase2_IEEE_Report.tex                         Phase 2 report LaTeX source (IEEEtran, Overleaf-ready)
 └── requirements.txt                                   Project dependencies (scikit-learn, PyTorch, Streamlit)
 ```
 
