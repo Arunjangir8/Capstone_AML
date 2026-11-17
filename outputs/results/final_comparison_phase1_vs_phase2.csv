@@ -1,0 +1,8 @@
+Model,Paradigm,Test RMSE,Test MAE,Test R²,NASA Score (S)
+Baseline,Baseline,51.63,39.47,-0.66,248340.66
+Linear Regression,Phase 1 (AML Tabular),15.85,12.84,0.844,406.6
+Decision Tree,Phase 1 (AML Tabular),14.96,10.8,0.861,356.99
+Random Forest,Phase 1 (AML Tabular),11.44,8.27,0.918,184.53
+LSTM,Phase 2 (DL Sequence),13.23,9.88,0.891,240.5
+1D-CNN,Phase 2 (DL Sequence),18.93,13.3,0.777,1404.26
+Hybrid Model (ML + DL),Hybrid (ML + DL),10.99,7.98,0.925,170.06

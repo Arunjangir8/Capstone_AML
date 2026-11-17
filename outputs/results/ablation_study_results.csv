@@ -1,0 +1,7 @@
+Component,Representation,Test RMSE,Test MAE,NASA Score
+AML Baseline (Linear Regression),71 Tabular Features,15.85,12.84,406.6
+Decision Tree Regressor,71 Tabular Features,14.96,10.8,357.0
+Random Forest (Best Classical ML),71 Tabular Features,11.44,8.27,184.5
+PyTorch Temporal 1D-CNN,30-cycle Raw Sequence,18.93,13.3,1404.3
+PyTorch LSTM (Best Sequence DL),30-cycle Raw Sequence,13.23,9.88,240.5
+Hybrid Fusion Model (ML + DL),Sequence + Features Fused,10.99,7.98,170.1
