@@ -6,6 +6,9 @@ pandas==3.1.0
 scikit-learn==1.9.1
 joblib==1.6.0
 
+# Deep Learning Framework (Phase 2)
+torch>=2.0.0
+
 # Data Visualization
 matplotlib==3.11.2
 seaborn==0.13.2
