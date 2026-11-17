@@ -29,3 +29,4 @@ Thumbs.db
 
 # Large processed data files
 data/processed/train_features.csv
+scratch/
