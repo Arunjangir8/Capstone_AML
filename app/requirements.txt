@@ -4,3 +4,5 @@ numpy==2.5.4
 scikit-learn==1.9.1
 joblib==1.6.0
 matplotlib==3.11.2
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0.0
